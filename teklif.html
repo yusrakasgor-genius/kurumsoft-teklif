@@ -4,10 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kurumsoft — Teklif Oluşturucu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',Tahoma,sans-serif;background:#dde3e8;color:#333;overflow:hidden}
+body{font-family:'Source Sans 3','Source Sans Pro',sans-serif;background:#dde3e8;color:#333;overflow:hidden}
 .app{display:flex;height:100vh;overflow:hidden}
 
 /* ── FORM PANEL ── */
@@ -134,9 +136,10 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#dde3e8;color:#333;over
 .cv-pn{font-size:9px;color:#bbb}
 
 /* ── CONTENT PAGE ── */
-.pg-content .ph{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:3mm;border-bottom:2px solid #1a7fa8;margin-bottom:5mm}
-.ph-brand{font-size:13px;font-weight:800;color:#1a7fa8;letter-spacing:2px}
-.ph-info{font-size:9px;color:#888;text-align:right;line-height:1.7}
+.pg-content .ph{display:flex;justify-content:space-between;align-items:center;padding-bottom:3mm;border-bottom:2.5px solid #1a7fa8;margin-bottom:5mm}
+.ph-klogo{height:34px;width:auto;display:block;object-fit:contain}
+.ph-info{font-size:10px;color:#555;text-align:right;line-height:1.75}
+.ph-info strong{color:#1a7fa8;font-size:11.5px;font-weight:700}
 .ig{display:grid;grid-template-columns:1fr 1fr;gap:3mm;margin-bottom:5mm}
 .ib{background:#f4f7f9;border-radius:4px;padding:3.5mm 4mm}
 .ib-t{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#1a7fa8;margin-bottom:2.5mm;padding-bottom:2mm;border-bottom:1px solid #dde5ea}
@@ -161,7 +164,9 @@ table.it tbody tr:nth-child(even) td{background:rgba(26,127,168,.035)}
 .tr:last-child{border-bottom:none}
 .tr.grand{background:#1a7fa8;color:#fff;font-weight:700;font-size:11.5px}
 .notes{font-size:9.5px;color:#444;line-height:1.75}.notes p{margin-bottom:2px}
-.pf{margin-top:auto;padding-top:2.5mm;border-top:1px solid #e8e8e8;display:flex;justify-content:space-between;font-size:8px;color:#c0c0c0}
+.pf{margin-top:auto;padding-top:2.5mm;border-top:1px solid #ddd;display:flex;justify-content:space-between;align-items:center}
+.pf-logo{height:20px;width:auto;object-fit:contain}
+.pf-partner{height:26px;width:auto;object-fit:contain}
 
 /* ── PRINT ── */
 @media print{
@@ -714,8 +719,8 @@ function detailPage(d) {
   return `
 <div class="page pg-content"><div class="pi">
   <div class="ph">
-    <div class="ph-brand">${esc(d.s_sirket)}</div>
-    <div class="ph-info">Teklif No: <strong>${esc(d.no)}</strong><br>Tarih: ${fmtDate(d.date)}</div>
+    <img src="K-PDF.pdf.png" class="ph-klogo" alt="">
+    <div class="ph-info">Teklif No: <strong>${esc(d.no)||'—'}</strong> &nbsp;|&nbsp; ${fmtDate(d.date)}</div>
   </div>
   <div class="ig">
     <div class="ib">
@@ -760,7 +765,10 @@ function detailPage(d) {
     ${d.teslimat?`<p><strong>Teslimat:</strong> ${esc(d.teslimat)}</p>`:''}
     ${d.notlar?`<p>${escBr(d.notlar)}</p>`:''}
   </div>`:''}
-  <div class="pf"><span>${esc(d.s_sirket)} — ${esc(d.baslik)}</span><span>2 / ${d.total}</span></div>
+  <div class="pf">
+    <img src="Kurumsoft-Logo.png" class="pf-logo" alt="Kurumsoft">
+    <img src="Kurumsoft Logo is ortagi.png" class="pf-partner" alt="Logo İş Ortağı">
+  </div>
 </div></div>`;
 }
 
@@ -768,8 +776,8 @@ function termsPage(d) {
   return `
 <div class="page pg-content"><div class="pi">
   <div class="ph">
-    <div class="ph-brand">${esc(d.s_sirket)}</div>
-    <div class="ph-info">Teklif No: <strong>${esc(d.no)}</strong><br>Tarih: ${fmtDate(d.date)}</div>
+    <img src="K-PDF.pdf.png" class="ph-klogo" alt="">
+    <div class="ph-info">Teklif No: <strong>${esc(d.no)||'—'}</strong> &nbsp;|&nbsp; ${fmtDate(d.date)}</div>
   </div>
   <div class="sec-h">Genel Şartlar & Koşullar</div>
   <div style="font-size:10.5px;color:#444;line-height:1.8;flex:1;overflow:hidden">
@@ -793,7 +801,10 @@ function termsPage(d) {
       <div><div style="border-bottom:1px solid #999;height:8mm"></div><div style="font-size:8.5px;color:#aaa;margin-top:2mm">İmza / Tarih</div></div>
     </div>
   </div>
-  <div class="pf"><span>${esc(d.s_sirket)} — ${esc(d.baslik)}</span><span>3 / 3</span></div>
+  <div class="pf">
+    <img src="Kurumsoft-Logo.png" class="pf-logo" alt="Kurumsoft">
+    <img src="Kurumsoft Logo is ortagi.png" class="pf-partner" alt="Logo İş Ortağı">
+  </div>
 </div></div>`;
 }
 
