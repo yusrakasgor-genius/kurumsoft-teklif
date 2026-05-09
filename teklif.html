@@ -138,7 +138,7 @@ body{font-family:'Outfit',sans-serif;background:#dde3e8;color:#333;overflow:hidd
 .cv-top{display:flex;align-items:flex-start}
 .cv-logo-img{height:38px;width:auto}
 .cv-mid{flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:6mm}
-.cv-eyebrow{font-size:9.5px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:4px;margin-bottom:6px}
+.cv-eyebrow{font-size:9.5px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:4px;margin-bottom:6px;margin-top:auto}
 .cv-title{font-size:28px;font-weight:800;color:#fff;line-height:1.2;margin-bottom:6px;word-break:break-word}
 .cv-sub{font-size:14px;color:rgba(255,255,255,.8);margin-bottom:12mm}
 .cv-hr{width:50px;height:4px;background:#4dc8e8;border-radius:2px;margin-bottom:8mm}
@@ -701,7 +701,7 @@ function coverPage(d) {
   <div class="cv-mid">
     <div class="cv-eyebrow">Teklif Dokümanı</div>
     <div class="cv-title">${esc(d.baslik)}</div>
-    ${d.altbaslik ? `<div class="cv-sub">${esc(d.altbaslik)}</div>` : '<div style="height:10mm"></div>'}
+    ${d.altbaslik ? `<div class="cv-sub">${esc(d.altbaslik)}</div>` : ''}
     <div class="cv-hr"></div>
     <div class="cv-cli-lbl">Hazırlanan Firma</div>
     <div class="cv-cli-name">${esc(d.a_sirket)||'—'}</div>
