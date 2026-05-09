@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kurumsoft — Teklif Oluşturucu</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#dde3e8;color:#333;overflow:hidden}
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* ── FORM PANEL ── */
+.form-panel{width:400px;min-width:400px;background:#fff;display:flex;flex-direction:column;box-shadow:2px 0 14px rgba(0,0,0,.14);z-index:10;overflow:hidden}
+
+.fp-header{background:linear-gradient(135deg,#1a7fa8,#0c5570);padding:14px 16px 10px;color:#fff;flex-shrink:0}
+.fp-header-row{display:flex;align-items:center;justify-content:space-between}
+.fp-brand{font-size:18px;font-weight:900;letter-spacing:3px}
+.fp-sub{font-size:10.5px;opacity:.75;margin-top:1px}
+.btn-new-top{background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.35);padding:5px 11px;border-radius:4px;font-size:11.5px;cursor:pointer;white-space:nowrap}
+.btn-new-top:hover{background:rgba(255,255,255,.28)}
+.save-status{font-size:10px;margin-top:6px;height:14px;opacity:.9}
+.ss-saving{color:#ffd}
+.ss-saved{color:#aeffd2}
+.ss-error{color:#ffb3b3}
+.ss-modified{color:#ffd580}
+
+/* ── SAVED PANEL ── */
+.saved-panel{flex-shrink:0;border-bottom:2px solid #1a7fa8}
+.saved-hdr{display:flex;align-items:center;gap:6px;padding:9px 16px;cursor:pointer;background:#f0f7fb;user-select:none}
+.saved-hdr:hover{background:#e4f2f9}
+.saved-hdr-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#1a7fa8;flex:1}
+.saved-count{background:#1a7fa8;color:#fff;font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:10px}
+.saved-arrow{font-size:10px;color:#1a7fa8;transition:transform .2s}
+.saved-arrow.open{transform:rotate(180deg)}
+.saved-body{max-height:210px;overflow-y:auto;background:#fafcfd}
+.saved-body::-webkit-scrollbar{width:4px}
+.saved-body::-webkit-scrollbar-thumb{background:#cde4ee;border-radius:2px}
+.saved-empty{padding:16px;text-align:center;font-size:11px;color:#bbb}
+.saved-loading{padding:12px;text-align:center;font-size:11px;color:#aaa}
+
+.si{display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;border-bottom:1px solid #eef2f5;position:relative}
+.si:hover{background:#eef6fb}
+.si.active{background:#ddf0f9;border-left:3px solid #1a7fa8}
+.si-info{flex:1;min-width:0}
+.si-top{display:flex;align-items:center;gap:6px;margin-bottom:2px}
+.si-no{font-size:10.5px;font-weight:700;color:#1a7fa8}
+.si-name{font-size:11px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.si-date{font-size:9.5px;color:#aaa}
+.si-badge{font-size:8.5px;font-weight:700;padding:1px 5px;border-radius:3px;text-transform:uppercase;letter-spacing:.5px}
+.b-taslak{background:#eee;color:#888}
+.b-gonderildi{background:#dbeafe;color:#2563eb}
+.b-onaylandi{background:#dcfce7;color:#16a34a}
+.b-reddedildi{background:#fee2e2;color:#dc2626}
+.si-del{background:none;border:none;color:#ccc;font-size:16px;cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0}
+.si-del:hover{color:#e44}
+
+/* ── FORM BODY ── */
+.fp-body{flex:1;overflow-y:auto;padding-bottom:8px}
+.fp-body::-webkit-scrollbar{width:5px}
+.fp-body::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
+.fp-sec{border-bottom:1px solid #f0f0f0;padding:11px 16px}
+.fp-sec-title{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#1a7fa8;margin-bottom:9px}
+.fg{margin-bottom:7px}
+.fg label{display:block;font-size:10.5px;color:#777;margin-bottom:2px}
+.fg input,.fg select,.fg textarea{width:100%;padding:6px 8px;border:1px solid #e0e0e0;border-radius:4px;font-size:12px;font-family:inherit;background:#fafafa;transition:border-color .15s}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:#1a7fa8;background:#fff}
+.fg textarea{resize:vertical;min-height:50px}
+.fg-row{display:flex;gap:7px}.fg-row .fg{flex:1}
+
+/* ── ITEMS ── */
+.items-list{display:flex;flex-direction:column;gap:5px}
+.item-card{background:#f7f9fb;border:1px solid #e5e9ec;border-radius:5px;padding:8px}
+.item-r1{display:grid;grid-template-columns:1fr 56px 66px;gap:5px;margin-bottom:5px}
+.item-r2{display:grid;grid-template-columns:1fr 1fr 28px;gap:5px;align-items:end}
+.item-lbl{font-size:9.5px;color:#aaa;margin-bottom:2px}
+.item-card input,.item-card select{padding:5px 6px;border:1px solid #ddd;border-radius:3px;font-size:11.5px;font-family:inherit;background:#fff;width:100%}
+.item-card input:focus,.item-card select:focus{outline:none;border-color:#1a7fa8}
+.btn-rm{background:#fff0f0;color:#d44;border:1px solid #fcc;border-radius:3px;width:28px;height:28px;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center}
+.btn-rm:hover{background:#ffe0e0}
+.btn-add-item{background:#fff;color:#1a7fa8;border:1px dashed #1a7fa8;border-radius:4px;padding:7px;cursor:pointer;font-size:12px;width:100%;margin-top:7px}
+.btn-add-item:hover{background:#e8f4f8}
+
+/* ── TOGGLE ── */
+.tg-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0}
+.tg-row span{font-size:12.5px;color:#444}
+.tg-btn{width:38px;height:20px;background:#ccc;border-radius:10px;border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.tg-btn.on{background:#1a7fa8}
+.tg-btn::after{content:'';width:16px;height:16px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.tg-btn.on::after{left:20px}
+
+/* ── ACTIONS ── */
+.fp-actions{flex-shrink:0;padding:11px 14px;background:#fff;border-top:1px solid #eee;display:flex;gap:6px}
+.btn-pdf{flex:1;background:linear-gradient(135deg,#1a7fa8,#0c5570);color:#fff;border:none;padding:9px 14px;border-radius:5px;font-size:13px;font-weight:700;cursor:pointer}
+.btn-pdf:hover{opacity:.9}
+.btn-save{flex:1;background:#fff;color:#1a7fa8;border:2px solid #1a7fa8;padding:9px 14px;border-radius:5px;font-size:13px;font-weight:700;cursor:pointer}
+.btn-save:hover{background:#e8f4f8}
+.btn-save:disabled{opacity:.5;cursor:not-allowed}
+.print-tip{font-size:9.5px;color:#aaa;text-align:center;padding:3px 14px 8px;flex-shrink:0}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:#222;color:#fff;padding:10px 16px;border-radius:6px;font-size:12.5px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;max-width:300px}
+.toast.show{opacity:1}
+.toast.t-ok{background:#1a7fa8}
+.toast.t-err{background:#d44}
+
+/* ── PREVIEW PANEL ── */
+.preview-panel{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;align-items:center;gap:20px;background:#dde3e8}
+.pv-label{font-size:10px;color:#999;text-transform:uppercase;letter-spacing:2px;align-self:flex-start}
+
+/* ── A4 PAGE ── */
+.page{width:210mm;height:297mm;position:relative;overflow:hidden;box-shadow:0 5px 25px rgba(0,0,0,.22);background:#fff;background-image:url("Kurumsoft - Fligran.png");background-size:100% 100%;background-repeat:no-repeat;flex-shrink:0}
+.pi{position:absolute;inset:0;padding:20mm 21mm 18mm 22mm;display:flex;flex-direction:column}
+
+/* ── COVER ── */
+.pg-cover .pi{padding:18mm 22mm 16mm 22mm}
+.cv-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:auto}
+.cv-brand{font-size:21px;font-weight:900;color:#1a7fa8;letter-spacing:4px}
+.cv-badge{background:#1a7fa8;color:#fff;font-size:9px;font-weight:800;letter-spacing:2px;padding:4px 10px;border-radius:3px}
+.cv-mid{flex:1;display:flex;flex-direction:column;justify-content:center;padding:16mm 0 8mm}
+.cv-eyebrow{font-size:9.5px;color:#bbb;text-transform:uppercase;letter-spacing:4px;margin-bottom:6px}
+.cv-title{font-size:28px;font-weight:800;color:#1a7fa8;line-height:1.2;margin-bottom:6px;word-break:break-word}
+.cv-sub{font-size:14px;color:#666;margin-bottom:12mm}
+.cv-hr{width:50px;height:4px;background:#1a7fa8;border-radius:2px;margin-bottom:8mm}
+.cv-cli-lbl{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#aaa;margin-bottom:3px}
+.cv-cli-name{font-size:20px;font-weight:700;color:#222}
+.cv-cli-contact{font-size:11px;color:#666;margin-top:1px}
+.cv-meta{display:flex;gap:16mm;margin-top:6mm}
+.cv-mi{display:flex;flex-direction:column;gap:1px}
+.cv-ml{font-size:8px;text-transform:uppercase;letter-spacing:1.5px;color:#bbb}
+.cv-mv{font-size:11px;color:#333;font-weight:600}
+.cv-bot{border-top:1px solid #ddd;padding-top:8px;display:flex;justify-content:space-between;font-size:10px;color:#777}
+.cv-bot strong{color:#333}
+.cv-pn{font-size:9px;color:#bbb}
+
+/* ── CONTENT PAGE ── */
+.pg-content .ph{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:3mm;border-bottom:2px solid #1a7fa8;margin-bottom:5mm}
+.ph-brand{font-size:13px;font-weight:800;color:#1a7fa8;letter-spacing:2px}
+.ph-info{font-size:9px;color:#888;text-align:right;line-height:1.7}
+.ig{display:grid;grid-template-columns:1fr 1fr;gap:3mm;margin-bottom:5mm}
+.ib{background:#f4f7f9;border-radius:4px;padding:3.5mm 4mm}
+.ib-t{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#1a7fa8;margin-bottom:2.5mm;padding-bottom:2mm;border-bottom:1px solid #dde5ea}
+.ib-name{font-size:11.5px;font-weight:700;color:#111;margin-bottom:1mm}
+.ib-ln{font-size:9.5px;color:#555;line-height:1.55}
+.subj-bar{background:#eef6fb;border-left:4px solid #1a7fa8;padding:3mm 4mm;border-radius:0 4px 4px 0;margin-bottom:4mm}
+.sb-lbl{font-size:8px;text-transform:uppercase;letter-spacing:1.5px;color:#aaa;margin-bottom:1px}
+.sb-txt{font-size:12.5px;font-weight:700;color:#1a7fa8}
+.intro{font-size:10px;color:#444;line-height:1.75;margin-bottom:4mm}
+.sec-h{font-size:10.5px;font-weight:700;color:#1a7fa8;text-transform:uppercase;letter-spacing:1px;margin-bottom:2.5mm;display:flex;align-items:center;gap:5px}
+.sec-h::after{content:'';flex:1;height:1px;background:#e0e0e0}
+table.it{width:100%;border-collapse:collapse;font-size:9.5px;margin-bottom:2.5mm}
+table.it thead tr{background:#1a7fa8}
+table.it th{padding:4.5px 6px;color:#fff;font-weight:600;font-size:8.5px;text-transform:uppercase;letter-spacing:.4px}
+table.it th.r,table.it td.r{text-align:right}
+table.it td{padding:4.5px 6px;border-bottom:1px solid #eee;vertical-align:top}
+table.it tbody tr:nth-child(even) td{background:rgba(26,127,168,.035)}
+.td-d{font-size:10.5px}
+.tot-wrap{display:flex;justify-content:flex-end;margin-bottom:3.5mm}
+.tot-box{min-width:52mm;border:1px solid #eee;border-radius:4px;overflow:hidden}
+.tr{display:flex;justify-content:space-between;padding:3.5px 9px;font-size:10.5px;border-bottom:1px solid #f0f0f0}
+.tr:last-child{border-bottom:none}
+.tr.grand{background:#1a7fa8;color:#fff;font-weight:700;font-size:11.5px}
+.notes{font-size:9.5px;color:#444;line-height:1.75}.notes p{margin-bottom:2px}
+.pf{margin-top:auto;padding-top:2.5mm;border-top:1px solid #e8e8e8;display:flex;justify-content:space-between;font-size:8px;color:#c0c0c0}
+
+/* ── PRINT ── */
+@media print{
+  @page{size:A4 portrait;margin:0}
+  body{overflow:visible!important}
+  .app{display:block;height:auto;overflow:visible}
+  .form-panel,.print-tip,.toast{display:none!important}
+  .preview-panel{width:100%!important;padding:0!important;background:none!important;overflow:visible!important;display:block!important;gap:0!important}
+  .pv-label{display:none}
+  .page{width:210mm!important;height:297mm!important;box-shadow:none!important;page-break-after:always;break-after:page;margin:0!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  .page:last-child{page-break-after:avoid;break-after:avoid}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ═══ FORM PANEL ═══ -->
+<aside class="form-panel">
+
+  <div class="fp-header">
+    <div class="fp-header-row">
+      <div>
+        <div class="fp-brand">KURUMSOFT</div>
+        <div class="fp-sub">Teklif Oluşturucu</div>
+      </div>
+      <button class="btn-new-top" onclick="newTeklif()">+ Yeni Teklif</button>
+    </div>
+    <div class="save-status" id="save-status"></div>
+  </div>
+
+  <!-- Kayıtlı Teklifler -->
+  <div class="saved-panel">
+    <div class="saved-hdr" onclick="toggleSaved()">
+      <span class="saved-hdr-title">Kayıtlı Teklifler</span>
+      <span class="saved-count" id="saved-count">0</span>
+      <span class="saved-arrow open" id="saved-arrow">▲</span>
+    </div>
+    <div class="saved-body" id="saved-body">
+      <div class="saved-loading">Yükleniyor...</div>
+    </div>
+  </div>
+
+  <div class="fp-body">
+
+    <!-- Teklif Bilgileri -->
+    <div class="fp-sec">
+      <div class="fp-sec-title">Teklif Bilgileri</div>
+      <div class="fg-row">
+        <div class="fg"><label>Teklif No</label><input type="text" id="f_no" placeholder="TKL-2024-001"></div>
+        <div class="fg"><label>Para Birimi</label>
+          <select id="f_cur">
+            <option value="₺">₺ TL</option>
+            <option value="$">$ USD</option>
+            <option value="€">€ EUR</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg-row">
+        <div class="fg"><label>Teklif Tarihi</label><input type="date" id="f_date"></div>
+        <div class="fg"><label>Geçerlilik Tarihi</label><input type="date" id="f_valid"></div>
+      </div>
+      <div class="fg"><label>Durum</label>
+        <select id="f_durum">
+          <option value="taslak">Taslak</option>
+          <option value="gonderildi">Gönderildi</option>
+          <option value="onaylandi">Onaylandı</option>
+          <option value="reddedildi">Reddedildi</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Gönderen -->
+    <div class="fp-sec">
+      <div class="fp-sec-title">Gönderen</div>
+      <div class="fg"><label>Şirket Adı</label><input type="text" id="s_sirket" value="Kurumsoft"></div>
+      <div class="fg-row">
+        <div class="fg"><label>Yetkili</label><input type="text" id="s_yetkili" placeholder="Ad Soyad"></div>
+        <div class="fg"><label>Unvan</label><input type="text" id="s_unvan" placeholder="Satış Müdürü"></div>
+      </div>
+      <div class="fg-row">
+        <div class="fg"><label>E-posta</label><input type="email" id="s_email" placeholder="info@kurumsoft.com"></div>
+        <div class="fg"><label>Telefon</label><input type="tel" id="s_tel" placeholder="+90 212 ..."></div>
+      </div>
+    </div>
+
+    <!-- Alıcı -->
+    <div class="fp-sec">
+      <div class="fp-sec-title">Alıcı</div>
+      <div class="fg"><label>Şirket / Kişi Adı</label><input type="text" id="a_sirket" placeholder="Müşteri A.Ş."></div>
+      <div class="fg"><label>Yetkili</label><input type="text" id="a_yetkili" placeholder="Ad Soyad"></div>
+      <div class="fg"><label>Adres</label><textarea id="a_adres" rows="2" placeholder="Adres..."></textarea></div>
+      <div class="fg-row">
+        <div class="fg"><label>E-posta</label><input type="email" id="a_email"></div>
+        <div class="fg"><label>Telefon</label><input type="tel" id="a_tel"></div>
+      </div>
+    </div>
+
+    <!-- Konu -->
+    <div class="fp-sec">
+      <div class="fp-sec-title">Teklif Konusu</div>
+      <div class="fg"><label>Başlık</label><input type="text" id="f_baslik" placeholder="ERP Sistemi Kurulum Teklifi"></div>
+      <div class="fg"><label>Alt Başlık</label><input type="text" id="f_altbaslik" placeholder="Yazılım Lisansı & Destek"></div>
+      <div class="fg"><label>Giriş Metni</label><textarea id="f_giris" rows="3" placeholder="Sayın Müşterimiz, talebiniz doğrultusunda..."></textarea></div>
+    </div>
+
+    <!-- Kalemler -->
+    <div class="fp-sec">
+      <div class="fp-sec-title">Teklif Kalemleri</div>
+      <div class="items-list" id="items-list"></div>
+      <button class="btn-add-item" onclick="addItem()">+ Kalem Ekle</button>
+    </div>
+
+    <!-- Şartlar & Notlar -->
+    <div class="fp-sec">
+      <div class="fp-sec-title">Şartlar & Notlar</div>
+      <div class="fg"><label>Ödeme Koşulları</label><input type="text" id="f_odeme" placeholder="Peşin / 30 gün vadeli"></div>
+      <div class="fg"><label>Teslimat / Süre</label><input type="text" id="f_teslimat" placeholder="Sözleşmeden itibaren 30 iş günü"></div>
+      <div class="fg"><label>Notlar</label><textarea id="f_notlar" rows="2" placeholder="Ek notlar..."></textarea></div>
+      <div class="fg"><label>Genel Şartlar & Koşullar</label><textarea id="f_sartlar" rows="3" placeholder="Fiyatlar KDV hariçtir..."></textarea></div>
+      <div class="tg-row">
+        <span>Şartlar Sayfası Ekle</span>
+        <button class="tg-btn" id="tg-terms" onclick="toggleTerms()"></button>
+      </div>
+    </div>
+
+  </div><!-- /fp-body -->
+
+  <div class="fp-actions">
+    <button class="btn-save" id="btn-save" onclick="saveTeklif()">💾 Kaydet</button>
+    <button class="btn-pdf" onclick="window.print()">🖨️ PDF Oluştur</button>
+  </div>
+  <div class="print-tip">PDF için: Yazdır → Arka Plan Grafikleri → Etkinleştir</div>
+
+</aside>
+
+<!-- ═══ PREVIEW ═══ -->
+<main class="preview-panel" id="preview-panel">
+  <div class="pv-label">Önizleme</div>
+</main>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Supabase ─────────────────────────────────────────────
+const SB_URL = 'https://wpcadoxrskngzzjbalos.supabase.co';
+const SB_KEY = 'sb_publishable_HFVlY3BMatijelMhgsQvQg_F_UnNILx';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+// ── State ────────────────────────────────────────────────
+let items = [], showTerms = false, ic = 0;
+let currentId = null;
+let savedOpen = true;
+let isDirty = false;
+
+// ── Init ─────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  const today = new Date(), plus30 = new Date();
+  plus30.setDate(today.getDate() + 30);
+  const y = today.getFullYear(), m = String(today.getMonth()+1).padStart(2,'0');
+  g('f_date').value  = isoDate(today);
+  g('f_valid').value = isoDate(plus30);
+  g('f_no').value    = `TKL-${y}${m}-001`;
+
+  document.querySelectorAll('input,select,textarea').forEach(el => {
+    el.addEventListener('input',  () => { markDirty(); render(); });
+    el.addEventListener('change', () => { markDirty(); render(); });
+  });
+
+  addItem();
+  render();
+  await loadList();
+});
+
+// ── Helpers ───────────────────────────────────────────────
+const g   = id => document.getElementById(id);
+const v   = id => { const el = g(id); return el ? el.value.trim() : ''; };
+const isoDate = d => d.toISOString().slice(0,10);
+
+function fmtDate(s) {
+  if (!s) return '—';
+  return new Date(s + 'T12:00:00').toLocaleDateString('tr-TR', {day:'2-digit', month:'long', year:'numeric'});
+}
+function fmtNum(n, sym) {
+  return (sym||'₺') + new Intl.NumberFormat('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}).format(parseFloat(n)||0);
+}
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escBr(s) { return esc(s).replace(/\n/g,'<br>'); }
+
+function setField(id, val) {
+  const el = g(id);
+  if (el) el.value = val || '';
+}
+
+function durumLabel(d) {
+  return {taslak:'Taslak', gonderildi:'Gönderildi', onaylandi:'Onaylandı', reddedildi:'Reddedildi'}[d] || d;
+}
+
+function durumClass(d) {
+  return {taslak:'b-taslak', gonderildi:'b-gonderildi', onaylandi:'b-onaylandi', reddedildi:'b-reddedildi'}[d] || 'b-taslak';
+}
+
+// ── Status & Toast ────────────────────────────────────────
+function setStatus(msg, type) {
+  const el = g('save-status');
+  el.textContent = msg;
+  el.className = 'save-status ss-' + type;
+}
+
+function markDirty() {
+  if (!isDirty) { isDirty = true; setStatus('● Kaydedilmemiş değişiklik var', 'modified'); }
+}
+
+let toastTimer;
+function showToast(msg, type='ok') {
+  const t = g('toast');
+  t.textContent = msg;
+  t.className = `toast t-${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── Saved Panel ───────────────────────────────────────────
+function toggleSaved() {
+  savedOpen = !savedOpen;
+  g('saved-body').style.display  = savedOpen ? '' : 'none';
+  g('saved-arrow').textContent    = savedOpen ? '▲' : '▼';
+  g('saved-arrow').classList.toggle('open', savedOpen);
+}
+
+async function loadList() {
+  const { data, error } = await sb
+    .from('teklifler')
+    .select('id, teklif_no, alici_sirket, baslik, teklif_tarihi, durum, updated_at')
+    .order('updated_at', { ascending: false })
+    .limit(100);
+
+  if (error) { g('saved-body').innerHTML = `<div class="saved-empty">Liste yüklenemedi</div>`; return; }
+
+  const list = data || [];
+  g('saved-count').textContent = list.length;
+
+  if (!list.length) {
+    g('saved-body').innerHTML = `<div class="saved-empty">Henüz kayıtlı teklif yok</div>`;
+    return;
+  }
+
+  g('saved-body').innerHTML = list.map(t => `
+    <div class="si${t.id === currentId ? ' active' : ''}" onclick="loadTeklif('${t.id}')">
+      <div class="si-info">
+        <div class="si-top">
+          <span class="si-no">${esc(t.teklif_no)||'—'}</span>
+          <span class="si-badge ${durumClass(t.durum)}">${durumLabel(t.durum)}</span>
+        </div>
+        <div class="si-name">${esc(t.alici_sirket || t.baslik || 'İsimsiz Teklif')}</div>
+        <div class="si-date">${fmtDate(t.teklif_tarihi)}</div>
+      </div>
+      <button class="si-del" onclick="event.stopPropagation();deleteTeklif('${t.id}')" title="Sil">×</button>
+    </div>`).join('');
+}
+
+// ── Save ──────────────────────────────────────────────────
+async function saveTeklif() {
+  const btn = g('btn-save');
+  btn.disabled = true;
+  setStatus('Kaydediliyor...', 'saving');
+
+  const payload = {
+    teklif_no:        v('f_no'),
+    teklif_tarihi:    v('f_date')  || null,
+    gecerlilik_tarihi:v('f_valid') || null,
+    para_birimi:      v('f_cur')   || '₺',
+    durum:            v('f_durum') || 'taslak',
+    sender_sirket:    v('s_sirket') || 'Kurumsoft',
+    sender_yetkili:   v('s_yetkili'),
+    sender_unvan:     v('s_unvan'),
+    sender_email:     v('s_email'),
+    sender_tel:       v('s_tel'),
+    alici_sirket:     v('a_sirket'),
+    alici_yetkili:    v('a_yetkili'),
+    alici_adres:      v('a_adres') || g('a_adres').value,
+    alici_email:      v('a_email'),
+    alici_tel:        v('a_tel'),
+    baslik:           v('f_baslik'),
+    altbaslik:        v('f_altbaslik'),
+    giris_metni:      g('f_giris').value,
+    odeme_kosullari:  v('f_odeme'),
+    teslimat_suresi:  v('f_teslimat'),
+    notlar:           g('f_notlar').value,
+    sartlar:          g('f_sartlar').value,
+    show_terms_page:  showTerms,
+  };
+
+  let teklif_id = currentId;
+
+  if (currentId) {
+    const { error } = await sb.from('teklifler').update(payload).eq('id', currentId);
+    if (error) { setStatus('Hata: ' + error.message, 'error'); btn.disabled=false; return; }
+    await sb.from('teklif_kalemleri').delete().eq('teklif_id', currentId);
+  } else {
+    const { data, error } = await sb.from('teklifler').insert(payload).select('id').single();
+    if (error) { setStatus('Hata: ' + error.message, 'error'); btn.disabled=false; return; }
+    teklif_id = data.id;
+    currentId = teklif_id;
+  }
+
+  if (items.length) {
+    const rows = items.map((it, i) => ({
+      teklif_id,
+      sira:        i,
+      aciklama:    it.desc,
+      miktar:      parseFloat(it.qty)   || 1,
+      birim:       it.unit,
+      birim_fiyat: parseFloat(it.price) || 0,
+      kdv_orani:   parseFloat(it.vat)   || 18,
+    }));
+    const { error } = await sb.from('teklif_kalemleri').insert(rows);
+    if (error) { setStatus('Kalemler kaydedilemedi: ' + error.message, 'error'); btn.disabled=false; return; }
+  }
+
+  isDirty = false;
+  setStatus('✓ Kaydedildi — ' + new Date().toLocaleTimeString('tr-TR'), 'saved');
+  showToast('Teklif başarıyla kaydedildi.', 'ok');
+  btn.disabled = false;
+  await loadList();
+}
+
+// ── Load ──────────────────────────────────────────────────
+async function loadTeklif(id) {
+  setStatus('Yükleniyor...', 'saving');
+
+  const [{ data: t, error: e1 }, { data: kal, error: e2 }] = await Promise.all([
+    sb.from('teklifler').select('*').eq('id', id).single(),
+    sb.from('teklif_kalemleri').select('*').eq('teklif_id', id).order('sira'),
+  ]);
+
+  if (e1) { setStatus('Yüklenemedi', 'error'); showToast('Teklif yüklenemedi: ' + e1.message, 'err'); return; }
+
+  currentId = id;
+  setField('f_no',      t.teklif_no);
+  setField('f_date',    t.teklif_tarihi);
+  setField('f_valid',   t.gecerlilik_tarihi);
+  setField('f_cur',     t.para_birimi);
+  setField('f_durum',   t.durum);
+  setField('s_sirket',  t.sender_sirket);
+  setField('s_yetkili', t.sender_yetkili);
+  setField('s_unvan',   t.sender_unvan);
+  setField('s_email',   t.sender_email);
+  setField('s_tel',     t.sender_tel);
+  setField('a_sirket',  t.alici_sirket);
+  setField('a_yetkili', t.alici_yetkili);
+  setField('a_adres',   t.alici_adres);
+  setField('a_email',   t.alici_email);
+  setField('a_tel',     t.alici_tel);
+  setField('f_baslik',  t.baslik);
+  setField('f_altbaslik',t.altbaslik);
+  setField('f_giris',   t.giris_metni);
+  setField('f_odeme',   t.odeme_kosullari);
+  setField('f_teslimat',t.teslimat_suresi);
+  setField('f_notlar',  t.notlar);
+  setField('f_sartlar', t.sartlar);
+
+  showTerms = !!t.show_terms_page;
+  g('tg-terms').classList.toggle('on', showTerms);
+
+  items = []; ic = 0;
+  (kal || []).forEach(k => {
+    ic++;
+    items.push({ id:`i${ic}`, desc: k.aciklama||'', qty: String(k.miktar??1),
+      unit: k.birim||'Adet', price: String(k.birim_fiyat??''), vat: String(k.kdv_orani??18) });
+  });
+  if (!items.length) addItem();
+
+  isDirty = false;
+  setStatus('✓ Yüklendi — ' + fmtDate(t.teklif_tarihi), 'saved');
+  renderItems();
+  render();
+  await loadList();
+  g('fp-body') && (g('fp-body').scrollTop = 0);
+  document.querySelector('.fp-body').scrollTop = 0;
+}
+
+// ── Delete ────────────────────────────────────────────────
+async function deleteTeklif(id) {
+  if (!confirm('Bu teklif kalıcı olarak silinsin mi?')) return;
+  const { error } = await sb.from('teklifler').delete().eq('id', id);
+  if (error) { showToast('Silinemedi: ' + error.message, 'err'); return; }
+  if (currentId === id) { currentId = null; _resetForm(); }
+  showToast('Teklif silindi.', 'ok');
+  await loadList();
+}
+
+// ── New ───────────────────────────────────────────────────
+function newTeklif() {
+  if (isDirty && !confirm('Kaydedilmemiş değişiklikler var. Yeni teklife geçilsin mi?')) return;
+  currentId = null;
+  _resetForm();
+}
+
+// ── Items ─────────────────────────────────────────────────
+function addItem() {
+  ic++;
+  items.push({ id:`i${ic}`, desc:'', qty:'1', unit:'Adet', price:'', vat:'18' });
+  renderItems();
+  render();
+}
+
+function removeItem(id) {
+  items = items.filter(x => x.id !== id);
+  renderItems();
+  render();
+  markDirty();
+}
+
+function setItem(id, field, val) {
+  const it = items.find(x => x.id === id);
+  if (it) { it[field] = val; render(); markDirty(); }
+}
+
+function renderItems() {
+  const list = g('items-list');
+  list.innerHTML = '';
+  const units = ['Adet','Gün','Saat','Ay','Yıl','Lisans','Paket','m²'];
+  const vats  = ['0','1','8','10','18','20'];
+  items.forEach(it => {
+    const d = document.createElement('div');
+    d.className = 'item-card';
+    d.innerHTML = `
+      <div class="item-r1">
+        <div>
+          <div class="item-lbl">Açıklama</div>
+          <input type="text" value="${esc(it.desc)}" placeholder="Ürün / Hizmet adı"
+            oninput="setItem('${it.id}','desc',this.value)">
+        </div>
+        <div>
+          <div class="item-lbl">Miktar</div>
+          <input type="number" value="${esc(it.qty)}" min="0" step="any"
+            oninput="setItem('${it.id}','qty',this.value)">
+        </div>
+        <div>
+          <div class="item-lbl">Birim</div>
+          <select onchange="setItem('${it.id}','unit',this.value)">
+            ${units.map(u=>`<option${it.unit===u?' selected':''}>${u}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="item-r2">
+        <div>
+          <div class="item-lbl">Birim Fiyat</div>
+          <input type="number" value="${esc(it.price)}" min="0" step="0.01" placeholder="0.00"
+            oninput="setItem('${it.id}','price',this.value)">
+        </div>
+        <div>
+          <div class="item-lbl">KDV %</div>
+          <select onchange="setItem('${it.id}','vat',this.value)">
+            ${vats.map(x=>`<option${it.vat===x?' selected':''}>${x}</option>`).join('')}
+          </select>
+        </div>
+        <button class="btn-rm" onclick="removeItem('${it.id}')" title="Sil">×</button>
+      </div>`;
+    list.appendChild(d);
+  });
+}
+
+function toggleTerms() {
+  showTerms = !showTerms;
+  g('tg-terms').classList.toggle('on', showTerms);
+  markDirty();
+  render();
+}
+
+// ── Totals ────────────────────────────────────────────────
+function calcTotals(sym) {
+  let sub = 0, vat = 0;
+  const rows = items.map(it => {
+    const qty = parseFloat(it.qty)||0, pr = parseFloat(it.price)||0, vp = parseFloat(it.vat)||0;
+    const lt = qty * pr, va = lt * vp / 100;
+    sub += lt; vat += va;
+    return {...it, qty, pr, vp, lt, va};
+  });
+  return {rows, sub, vat, grand: sub+vat, sym};
+}
+
+// ── RENDER ────────────────────────────────────────────────
+function render() {
+  const sym = v('f_cur')||'₺';
+  const totals = calcTotals(sym);
+  const total  = showTerms ? 3 : 2;
+  const d = {
+    no: v('f_no'), date: v('f_date'), valid: v('f_valid'), sym,
+    s_sirket: v('s_sirket')||'Kurumsoft', s_yetkili: v('s_yetkili'),
+    s_unvan: v('s_unvan'), s_email: v('s_email'), s_tel: v('s_tel'),
+    a_sirket: v('a_sirket'), a_yetkili: v('a_yetkili'),
+    a_adres: g('a_adres').value, a_email: v('a_email'), a_tel: v('a_tel'),
+    baslik: v('f_baslik')||'Teklif', altbaslik: v('f_altbaslik'),
+    giris: g('f_giris').value, odeme: v('f_odeme'), teslimat: v('f_teslimat'),
+    notlar: g('f_notlar').value, sartlar: g('f_sartlar').value,
+    total, totals
+  };
+  const panel = g('preview-panel');
+  panel.innerHTML = `<div class="pv-label">Önizleme</div>` +
+    coverPage(d) + detailPage(d) + (showTerms ? termsPage(d) : '');
+}
+
+function coverPage(d) {
+  return `
+<div class="page pg-cover"><div class="pi">
+  <div class="cv-top">
+    <div class="cv-brand">${esc(d.s_sirket)}</div>
+    <div class="cv-badge">TEKLİF</div>
+  </div>
+  <div class="cv-mid">
+    <div class="cv-eyebrow">Teklif Dokümanı</div>
+    <div class="cv-title">${esc(d.baslik)}</div>
+    ${d.altbaslik ? `<div class="cv-sub">${esc(d.altbaslik)}</div>` : '<div style="height:10mm"></div>'}
+    <div class="cv-hr"></div>
+    <div class="cv-cli-lbl">Hazırlanan Firma</div>
+    <div class="cv-cli-name">${esc(d.a_sirket)||'—'}</div>
+    ${d.a_yetkili ? `<div class="cv-cli-contact">Sayın ${esc(d.a_yetkili)}</div>` : ''}
+    <div class="cv-meta">
+      <div class="cv-mi"><span class="cv-ml">Teklif No</span><span class="cv-mv">${esc(d.no)||'—'}</span></div>
+      <div class="cv-mi"><span class="cv-ml">Tarih</span><span class="cv-mv">${fmtDate(d.date)}</span></div>
+      <div class="cv-mi"><span class="cv-ml">Geçerlilik</span><span class="cv-mv">${fmtDate(d.valid)}</span></div>
+    </div>
+  </div>
+  <div class="cv-bot">
+    <div>Hazırlayan: <strong>${esc(d.s_yetkili)||esc(d.s_sirket)}</strong>${d.s_unvan?' — '+esc(d.s_unvan):''}</div>
+    <div class="cv-pn">1 / ${d.total}</div>
+  </div>
+</div></div>`;
+}
+
+function detailPage(d) {
+  const {rows, sub, vat, grand, sym} = d.totals;
+  const hasNotes = d.odeme || d.teslimat || d.notlar;
+  let trows = !rows.length
+    ? `<tr><td colspan="6" style="text-align:center;color:#ccc;padding:10px;font-size:10px">Henüz kalem eklenmedi</td></tr>`
+    : rows.map((it,i) => `<tr>
+        <td style="color:#bbb;font-size:8.5px">${i+1}</td>
+        <td class="td-d">${esc(it.desc)||'<span style="color:#ccc">—</span>'}</td>
+        <td class="r">${it.qty} ${esc(it.unit)}</td>
+        <td class="r">${fmtNum(it.pr,sym)}</td>
+        <td class="r">%${it.vp}</td>
+        <td class="r"><strong>${fmtNum(it.lt,sym)}</strong></td>
+      </tr>`).join('');
+
+  return `
+<div class="page pg-content"><div class="pi">
+  <div class="ph">
+    <div class="ph-brand">${esc(d.s_sirket)}</div>
+    <div class="ph-info">Teklif No: <strong>${esc(d.no)}</strong><br>Tarih: ${fmtDate(d.date)}</div>
+  </div>
+  <div class="ig">
+    <div class="ib">
+      <div class="ib-t">Gönderen</div>
+      <div class="ib-name">${esc(d.s_sirket)}</div>
+      ${d.s_yetkili?`<div class="ib-ln">${esc(d.s_yetkili)}${d.s_unvan?' — '+esc(d.s_unvan):''}</div>`:''}
+      ${d.s_email?`<div class="ib-ln">${esc(d.s_email)}</div>`:''}
+      ${d.s_tel?`<div class="ib-ln">${esc(d.s_tel)}</div>`:''}
+    </div>
+    <div class="ib">
+      <div class="ib-t">Alıcı</div>
+      <div class="ib-name">${esc(d.a_sirket)||'—'}</div>
+      ${d.a_yetkili?`<div class="ib-ln">Sayın ${esc(d.a_yetkili)}</div>`:''}
+      ${d.a_adres?`<div class="ib-ln">${escBr(d.a_adres)}</div>`:''}
+      ${d.a_email?`<div class="ib-ln">${esc(d.a_email)}</div>`:''}
+      ${d.a_tel?`<div class="ib-ln">${esc(d.a_tel)}</div>`:''}
+    </div>
+  </div>
+  <div class="subj-bar">
+    <div class="sb-lbl">Teklif Konusu</div>
+    <div class="sb-txt">${esc(d.baslik)}</div>
+  </div>
+  ${d.giris?`<div class="intro">${escBr(d.giris)}</div>`:''}
+  <div class="sec-h">Teklif Kalemleri</div>
+  <table class="it">
+    <thead><tr>
+      <th style="width:18px">#</th><th>Açıklama</th>
+      <th class="r">Miktar</th><th class="r">Birim Fiyat</th>
+      <th class="r">KDV</th><th class="r">Toplam</th>
+    </tr></thead>
+    <tbody>${trows}</tbody>
+  </table>
+  <div class="tot-wrap"><div class="tot-box">
+    <div class="tr"><span>Ara Toplam</span><span>${fmtNum(sub,sym)}</span></div>
+    <div class="tr"><span>KDV Tutarı</span><span>${fmtNum(vat,sym)}</span></div>
+    <div class="tr grand"><span>GENEL TOPLAM</span><span>${fmtNum(grand,sym)}</span></div>
+  </div></div>
+  ${hasNotes?`
+  <div class="sec-h">Notlar & Koşullar</div>
+  <div class="notes">
+    ${d.odeme?`<p><strong>Ödeme:</strong> ${esc(d.odeme)}</p>`:''}
+    ${d.teslimat?`<p><strong>Teslimat:</strong> ${esc(d.teslimat)}</p>`:''}
+    ${d.notlar?`<p>${escBr(d.notlar)}</p>`:''}
+  </div>`:''}
+  <div class="pf"><span>${esc(d.s_sirket)} — ${esc(d.baslik)}</span><span>2 / ${d.total}</span></div>
+</div></div>`;
+}
+
+function termsPage(d) {
+  return `
+<div class="page pg-content"><div class="pi">
+  <div class="ph">
+    <div class="ph-brand">${esc(d.s_sirket)}</div>
+    <div class="ph-info">Teklif No: <strong>${esc(d.no)}</strong><br>Tarih: ${fmtDate(d.date)}</div>
+  </div>
+  <div class="sec-h">Genel Şartlar & Koşullar</div>
+  <div style="font-size:10.5px;color:#444;line-height:1.8;flex:1;overflow:hidden">
+    ${d.sartlar?escBr(d.sartlar):'<span style="color:#ccc;font-size:10px">Şartlar metni girilmedi.</span>'}
+  </div>
+  <div style="margin-top:8mm">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10mm">
+      <div>
+        <div style="font-size:8px;text-transform:uppercase;letter-spacing:1px;color:#aaa;margin-bottom:2px">Hazırlayan</div>
+        <div style="font-size:11px;font-weight:700;color:#222">${esc(d.s_sirket)}</div>
+        <div style="font-size:10px;color:#555">${esc(d.s_yetkili)}</div>
+      </div>
+      <div>
+        <div style="font-size:8px;text-transform:uppercase;letter-spacing:1px;color:#aaa;margin-bottom:2px">Kabul Eden</div>
+        <div style="font-size:11px;font-weight:700;color:#222">${esc(d.a_sirket)||'—'}</div>
+        <div style="font-size:10px;color:#555">${esc(d.a_yetkili)}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10mm;margin-top:10mm">
+      <div><div style="border-bottom:1px solid #999;height:8mm"></div><div style="font-size:8.5px;color:#aaa;margin-top:2mm">İmza / Tarih</div></div>
+      <div><div style="border-bottom:1px solid #999;height:8mm"></div><div style="font-size:8.5px;color:#aaa;margin-top:2mm">İmza / Tarih</div></div>
+    </div>
+  </div>
+  <div class="pf"><span>${esc(d.s_sirket)} — ${esc(d.baslik)}</span><span>3 / 3</span></div>
+</div></div>`;
+}
+
+// ── Reset ─────────────────────────────────────────────────
+function _resetForm() {
+  document.querySelectorAll('input[type=text],input[type=email],input[type=tel],input[type=number],textarea').forEach(el => el.value='');
+  g('s_sirket').value = 'Kurumsoft';
+  g('f_cur').value    = '₺';
+  g('f_durum').value  = 'taslak';
+  const today = new Date(), plus30 = new Date(); plus30.setDate(today.getDate()+30);
+  g('f_date').value  = isoDate(today);
+  g('f_valid').value = isoDate(plus30);
+  const y = today.getFullYear(), m = String(today.getMonth()+1).padStart(2,'0');
+  g('f_no').value = `TKL-${y}${m}-001`;
+  items=[]; ic=0; showTerms=false; isDirty=false;
+  g('tg-terms').classList.remove('on');
+  setStatus('', '');
+  addItem(); render(); loadList();
+}
+
+function resetForm() {
+  if (!confirm('Formu sıfırlamak istediğinizden emin misiniz?')) return;
+  currentId = null;
+  _resetForm();
+}
+</script>
+</body>
+</html>
